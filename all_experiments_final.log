@@ -1,0 +1,248 @@
+/Users/rajkumarmyakala/seals/experiments/exp_stability_plasticity.py:444: UserWarning: set_ticklabels() should only be used with a fixed number of ticks, i.e. after set_ticks() or using a FixedLocator.
+  ax.set_xticklabels(regime_names, rotation=15, ha='right')
+/Users/rajkumarmyakala/seals/experiments/exp_feedback_regimes.py:311: UserWarning: set_ticklabels() should only be used with a fixed number of ticks, i.e. after set_ticks() or using a FixedLocator.
+  ax.set_xticklabels(regime_names, rotation=15, ha='right')
+
+================================================================================
+SEALS - Self-Evolving AI Lifecycle Simulator
+Reference Implementation for ML System Dynamics
+================================================================================
+
+================================================================================
+Running: Experiment 1: Stability vs Plasticity
+================================================================================
+
+
+================================================================================
+SEALS Experiment 1: Stability vs Plasticity Trade-Off
+================================================================================
+
+============================================================
+Running regime: Over-Plastic (Oscillating)
+============================================================
+Step   0 | Acc: 0.660 | SPI:  0.00 | Drift: 0.000 | Retrain: NO 
+Step  50 | Acc: 0.520 | SPI:  0.70 | Drift: 0.048 | Retrain: YES
+Step 100 | Acc: 0.340 | SPI: -1.86 | Drift: 0.049 | Retrain: YES
+Step 150 | Acc: 0.480 | SPI: -3.63 | Drift: 0.048 | Retrain: NO 
+
+============================================================
+Running regime: Over-Stable (Stagnant)
+============================================================
+Step   0 | Acc: 0.710 | SPI:  0.00 | Drift: 0.000 | Retrain: NO 
+Step  50 | Acc: 0.640 | SPI:  1.48 | Drift: 0.064 | Retrain: NO 
+Step 100 | Acc: 0.440 | SPI: -0.36 | Drift: 0.063 | Retrain: YES
+Step 150 | Acc: 0.490 | SPI:  0.26 | Drift: 0.063 | Retrain: YES
+
+============================================================
+Running regime: Balanced (Optimal)
+============================================================
+Step   0 | Acc: 0.350 | SPI:  0.00 | Drift: 0.000 | Retrain: YES
+Step  50 | Acc: 0.630 | SPI:  2.93 | Drift: 0.106 | Retrain: NO 
+Step 100 | Acc: 0.430 | SPI: -1.34 | Drift: 0.048 | Retrain: YES
+Step 150 | Acc: 0.350 | SPI:  0.56 | Drift: 0.159 | Retrain: YES
+
+✓ Main figure saved to /Users/rajkumarmyakala/seals/paper/figures/fig_main_stability_plasticity.png
+✓ Supplementary figure saved to /Users/rajkumarmyakala/seals/paper/figures/exp_stability_plasticity_supplementary.png
+
+================================================================================
+RESULTS SUMMARY TABLE
+================================================================================
+Regime               Mean Acc     Mean SPI     Final Regret    Retrains  
+--------------------------------------------------------------------------------
+Over-Plastic (Oscillating) 0.5001       -2.7563      379.9           100       
+Over-Stable (Stagnant) 0.5086       -1.0886      373.1           100       
+Balanced (Optimal)   0.5111       -1.4876      376.2           100       
+================================================================================
+
+================================================================================
+SUMMARY
+================================================================================
+
+Over-Plastic (Oscillating):
+  Mean Accuracy: 0.5001
+  Std Accuracy: 0.0870
+  Mean SPI: -2.7563
+  Total Retrains: 100
+  Avg Retrain Interval: 1.5
+  Discrepancy Score: 0.0383
+
+Over-Stable (Stagnant):
+  Mean Accuracy: 0.5086
+  Std Accuracy: 0.0915
+  Mean SPI: -1.0886
+  Total Retrains: 100
+  Avg Retrain Interval: 1.6
+  Discrepancy Score: 0.0438
+
+Balanced (Optimal):
+  Mean Accuracy: 0.5111
+  Std Accuracy: 0.0970
+  Mean SPI: -1.4876
+  Total Retrains: 100
+  Avg Retrain Interval: 1.8
+  Discrepancy Score: 0.0379
+
+================================================================================
+
+================================================================================
+Running: Experiment 2: Feedback Regimes
+================================================================================
+
+
+================================================================================
+SEALS Experiment 2: Feedback Regimes
+================================================================================
+
+============================================================
+Running feedback regime: Passive (Error-Based)
+Budget: $500.0
+============================================================
+Step   0 | Acc: 0.710 | Feedback Cost: $ 290.0 | Budget Remaining: $  210.0
+Step  40 | Acc: 0.550 | Feedback Cost: $   0.0 | Budget Remaining: $    0.0
+Step  80 | Acc: 0.800 | Feedback Cost: $   0.0 | Budget Remaining: $    0.0
+Step 120 | Acc: 0.840 | Feedback Cost: $   0.0 | Budget Remaining: $    0.0
+Step 160 | Acc: 0.480 | Feedback Cost: $   0.0 | Budget Remaining: $    0.0
+
+============================================================
+Running feedback regime: Human-in-the-Loop
+Budget: $500.0
+============================================================
+Step   0 | Acc: 0.760 | Feedback Cost: $1000.0 | Budget Remaining: $ -500.0
+Step  40 | Acc: 0.670 | Feedback Cost: $   0.0 | Budget Remaining: $-4500.0
+Step  80 | Acc: 0.790 | Feedback Cost: $   0.0 | Budget Remaining: $-4500.0
+Step 120 | Acc: 0.960 | Feedback Cost: $   0.0 | Budget Remaining: $-4500.0
+Step 160 | Acc: 0.360 | Feedback Cost: $   0.0 | Budget Remaining: $-4500.0
+
+============================================================
+Running feedback regime: Policy (Business Rules)
+Budget: $500.0
+============================================================
+Step   0 | Acc: 0.790 | Feedback Cost: $   0.0 | Budget Remaining: $  500.0
+Step  40 | Acc: 0.380 | Feedback Cost: $   2.0 | Budget Remaining: $  446.0
+Step  80 | Acc: 0.200 | Feedback Cost: $   2.0 | Budget Remaining: $  394.0
+Step 120 | Acc: 0.070 | Feedback Cost: $   2.0 | Budget Remaining: $  362.0
+Step 160 | Acc: 0.600 | Feedback Cost: $   0.0 | Budget Remaining: $  318.0
+
+✓ Plot saved to /Users/rajkumarmyakala/seals/paper/figures/exp_feedback_regimes.png
+✓ PDF saved to /Users/rajkumarmyakala/seals/paper/figures/exp_feedback_regimes.pdf
+
+================================================================================
+SUMMARY
+================================================================================
+
+Passive (Error-Based):
+  Initial Accuracy: 0.7100
+  Final Accuracy: 0.2400
+  Mean Accuracy: 0.5215
+  Total Feedback Cost: $500.00
+  Cost Efficiency: 958.6809
+
+Human-in-the-Loop:
+  Initial Accuracy: 0.7600
+  Final Accuracy: 0.1400
+  Mean Accuracy: 0.5247
+  Total Feedback Cost: $5000.00
+  Cost Efficiency: 9528.3468
+
+Policy (Business Rules):
+  Initial Accuracy: 0.7900
+  Final Accuracy: 0.8400
+  Mean Accuracy: 0.4717
+  Total Feedback Cost: $230.00
+  Cost Efficiency: 487.6497
+
+================================================================================
+
+================================================================================
+Running: Experiment 3: Real Dataset Evaluation
+================================================================================
+
+
+================================================================================
+SEALS Experiment 3: Real Dataset Evaluation
+================================================================================
+
+============================================================
+CMAPSS FD001 Experiment
+============================================================
+✓ Loaded FD001
+  Train shape: (20631, 24)
+  Test shape: (13096, 24)
+  Classes: 362
+Window  0 | Acc: 0.505 | AUC: 0.852 | SPI: 0.00
+Window  1 | Acc: 0.754 | AUC: 0.769 | SPI: 100.00
+Window  2 | Acc: 0.865 | AUC: 0.929 | SPI: 100.00
+Window  3 | Acc: 0.648 | AUC: 0.780 | SPI: 100.00
+Window  4 | Acc: 0.611 | AUC: 0.755 | SPI: 100.00
+Window  5 | Acc: 0.562 | AUC: 0.730 | SPI: -0.07
+Window  6 | Acc: 0.783 | AUC: 0.852 | SPI: -0.03
+Window  7 | Acc: 0.831 | AUC: 0.792 | SPI: 0.07
+Window  8 | Acc: 0.791 | AUC: 0.888 | SPI: 0.07
+Window  9 | Acc: 0.800 | AUC: 0.869 | SPI: 0.09
+Window 10 | Acc: 0.826 | AUC: 0.865 | SPI: 0.01
+Window 11 | Acc: 0.711 | AUC: 0.824 | SPI: -0.04
+
+============================================================
+AI4I 2020 Experiment
+============================================================
+✓ Loaded AI4I 2020
+  Train shape: (8000, 11)
+  Test shape: (2000, 11)
+  Features: 11
+  Classes: 2
+  Class balance: 278/8000
+Window  0 | Acc: 0.990 | Prec: 1.000 | Rec: 0.667 | AUC: 0.825
+Window  1 | Acc: 1.000 | Prec: 1.000 | Rec: 1.000 | AUC: 1.000
+Window  2 | Acc: 1.000 | Prec: 1.000 | Rec: 1.000 | AUC: 1.000
+Window  3 | Acc: 1.000 | Prec: 1.000 | Rec: 1.000 | AUC: 1.000
+Window  4 | Acc: 1.000 | Prec: 1.000 | Rec: 1.000 | AUC: 1.000
+Window  5 | Acc: 1.000 | Prec: 1.000 | Rec: 1.000 | AUC: 1.000
+Window  6 | Acc: 0.980 | Prec: 0.000 | Rec: 0.000 | AUC: 0.500
+Window  7 | Acc: 0.970 | Prec: 1.000 | Rec: 0.250 | AUC: 1.000
+Window  8 | Acc: 1.000 | Prec: 1.000 | Rec: 1.000 | AUC: 1.000
+Window  9 | Acc: 0.980 | Prec: 1.000 | Rec: 0.333 | AUC: 0.785
+Window 10 | Acc: 0.980 | Prec: 0.000 | Rec: 0.000 | AUC: 0.500
+Window 11 | Acc: 0.910 | Prec: 0.000 | Rec: 0.000 | AUC: 0.500
+Window 12 | Acc: 1.000 | Prec: 0.000 | Rec: 0.000 | AUC: 0.500
+Window 13 | Acc: 0.970 | Prec: 0.000 | Rec: 0.000 | AUC: 0.500
+Window 14 | Acc: 0.980 | Prec: 0.000 | Rec: 0.000 | AUC: 0.500
+Window 15 | Acc: 0.970 | Prec: 0.000 | Rec: 0.000 | AUC: 0.500
+Window 16 | Acc: 0.960 | Prec: 1.000 | Rec: 0.200 | AUC: 0.961
+Window 17 | Acc: 1.000 | Prec: 1.000 | Rec: 1.000 | AUC: 1.000
+Window 18 | Acc: 0.990 | Prec: 1.000 | Rec: 0.500 | AUC: 0.707
+Window 19 | Acc: 0.970 | Prec: 0.000 | Rec: 0.000 | AUC: 0.500
+
+✓ Plot saved to /Users/rajkumarmyakala/seals/paper/figures/exp_real_datasets.png
+
+================================================================================
+SUMMARY
+================================================================================
+
+CMAPSS-FD001:
+  Mean Accuracy: 0.7240
+  Mean AUC: 0.8253
+  Total Retrains: 2
+  Mean SPI: 33.3415
+
+AI4I-2020:
+  Mean Accuracy: 0.9825
+  Mean AUC: 0.7639
+  Mean Precision: 0.6000
+  Mean Recall: 0.4475
+  Total Retrains: 3
+  Mean SPI: 4.1570
+
+================================================================================
+
+================================================================================
+EXPERIMENT SUMMARY
+================================================================================
+✓ PASSED: Experiment 1: Stability vs Plasticity
+✓ PASSED: Experiment 2: Feedback Regimes
+✓ PASSED: Experiment 3: Real Dataset Evaluation
+
+================================================================================
+All experiments completed!
+Results saved to: paper/figures/
+================================================================================
+

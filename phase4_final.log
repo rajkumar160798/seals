@@ -1,0 +1,78 @@
+
+================================================================================
+PHASE 4: AUTO-SEALS META-POLICY LEARNING
+================================================================================
+
+  Running: Accuracy-Critical Domain (Medical)
+    Configuration: cost×1.0, risk×2.0, accuracy_critical=True
+    Fixed SEALS regret: 597.9
+    Auto-SEALS regret:  597.9
+    Improvement:        +0.0%
+    Learned weights:    α=0.398, β=0.410, γ=0.393
+
+  Running: Cost-Critical Domain (Edge Devices)
+    Configuration: cost×10.0, risk×0.5, accuracy_critical=False
+    Fixed SEALS regret: 579.1
+    Auto-SEALS regret:  579.1
+    Improvement:        +0.0%
+    Learned weights:    α=0.395, β=0.407, γ=0.398
+
+  Running: Risk-Critical Domain (Autonomous Vehicles)
+    Configuration: cost×5.0, risk×3.0, accuracy_critical=False
+    Fixed SEALS regret: 453.3
+    Auto-SEALS regret:  453.3
+    Improvement:        +0.0%
+    Learned weights:    α=0.403, β=0.401, γ=0.395
+
+✓ Regret comparison saved to /Users/rajkumarmyakala/seals/paper/figures/phase4_auto_seals_regret.png
+✓ Weight evolution saved to /Users/rajkumarmyakala/seals/paper/figures/phase4_auto_seals_weights.png
+
+================================================================================
+AUTO-SEALS RESULTS SUMMARY
+================================================================================
+
+Accuracy-Critical Domain (Medical):
+------------------------------------------------------------
+  Fixed SEALS:
+    Mean Accuracy:      0.6753
+    Final Cumulative Regret: 597.9
+  Auto-SEALS:
+    Mean Accuracy:      0.6753
+    Final Cumulative Regret: 597.9
+  Regret Improvement: +0.0%
+  Learned Weights:
+    α (Accuracy):  0.3975
+    β (Cost):      0.4099
+    γ (Risk):      0.3925
+
+Cost-Critical Domain (Edge Devices):
+------------------------------------------------------------
+  Fixed SEALS:
+    Mean Accuracy:      0.6753
+    Final Cumulative Regret: 579.1
+  Auto-SEALS:
+    Mean Accuracy:      0.6753
+    Final Cumulative Regret: 579.1
+  Regret Improvement: +0.0%
+  Learned Weights:
+    α (Accuracy):  0.3947
+    β (Cost):      0.4069
+    γ (Risk):      0.3985
+
+Risk-Critical Domain (Autonomous Vehicles):
+------------------------------------------------------------
+  Fixed SEALS:
+    Mean Accuracy:      0.7100
+    Final Cumulative Regret: 453.3
+  Auto-SEALS:
+    Mean Accuracy:      0.7100
+    Final Cumulative Regret: 453.3
+  Regret Improvement: +0.0%
+  Learned Weights:
+    α (Accuracy):  0.4034
+    β (Cost):      0.4013
+    γ (Risk):      0.3953
+
+================================================================================
+✓ Phase 4 Complete: Auto-SEALS learns domain-optimal governance policies
+================================================================================
