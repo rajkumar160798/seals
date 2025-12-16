@@ -357,6 +357,117 @@ class ComparableBaselines:
     
     Ensures all policies are evaluated under same conditions.
     """
+
+
+class AutoSEALSPolicy(SEALSPolicy):
+    """
+    Auto-SEALS: SEALS with learned weights.
+    
+    Instead of fixed α, β, γ, this policy learns them based on
+    observed regret patterns in the deployment environment.
+    """
+    
+    def __init__(
+        self,
+        initial_alpha: float = 1.0,
+        initial_beta: float = 0.1,
+        initial_gamma: float = 0.1,
+        learning_rate: float = 0.05,
+        seed: int = 42
+    ):
+        """
+        Initialize Auto-SEALS with learning capability.
+        
+        Args:
+            initial_alpha: Starting accuracy weight
+            initial_beta: Starting cost weight
+            initial_gamma: Starting risk weight
+            learning_rate: Gradient step size for adaptation
+            seed: Random seed
+        """
+        super().__init__(alpha=initial_alpha, beta=initial_beta, gamma=initial_gamma, seed=seed)
+        self.name = "Auto-SEALS"
+        
+        # Learning state
+        self.accuracy_history = []
+        self.cost_history = []
+        self.risk_history = []
+        self.regret_history = []
+        self.learning_rate = learning_rate
+        self.warmup_steps = 30
+    
+    def update_weights_from_feedback(
+        self,
+        accuracy: float,
+        cost: float,
+        risk: float,
+        cumulative_regret: float
+    ):
+        """
+        Update α, β, γ based on observed metrics.
+        
+        Args:
+            accuracy: Current model accuracy
+            cost: Cost of last decision
+            risk: Risk of last decision
+            cumulative_regret: Total regret so far
+        """
+        self.accuracy_history.append(accuracy)
+        self.cost_history.append(cost)
+        self.risk_history.append(risk)
+        self.regret_history.append(cumulative_regret)
+        
+        # Only learn after warmup
+        if len(self.accuracy_history) < self.warmup_steps:
+            return
+        
+        # Analyze recent performance
+        window = min(20, len(self.accuracy_history))
+        recent_acc = np.mean(self.accuracy_history[-window:])
+        recent_cost = np.mean(self.cost_history[-window:])
+        recent_risk = np.mean(self.risk_history[-window:])
+        
+        # Compute "pain points" - areas where performance is weak
+        target_acc = 0.95
+        target_cost = 10.0
+        target_risk = 0.1
+        
+        pain_acc = max(0, target_acc - recent_acc)
+        pain_cost = max(0, recent_cost - 5.0) / max(target_cost, 1.0)
+        pain_risk = max(0, recent_risk - target_risk) / max(target_risk, 1.0)
+        
+        # Normalize pains
+        total_pain = pain_acc + pain_cost + pain_risk + 1e-6
+        
+        # Adjust weights: increase weight on painful dimensions
+        delta_alpha = (pain_acc / total_pain) * self.learning_rate
+        delta_beta = (pain_cost / total_pain) * self.learning_rate
+        delta_gamma = (pain_risk / total_pain) * self.learning_rate
+        
+        self.alpha += delta_alpha
+        self.beta += delta_beta
+        self.gamma += delta_gamma
+        
+        # Keep weights normalized and bounded
+        current_sum = self.alpha + self.beta + self.gamma
+        target_sum = 1.2
+        scale = target_sum / current_sum
+        
+        self.alpha = np.clip(self.alpha * scale, 0.01, 5.0)
+        self.beta = np.clip(self.beta * scale, 0.01, 5.0)
+        self.gamma = np.clip(self.gamma * scale, 0.01, 5.0)
+    
+    def get_learning_statistics(self) -> Dict:
+        """Get learning progress statistics."""
+        return {
+            'steps_observed': len(self.accuracy_history),
+            'current_alpha': self.alpha,
+            'current_beta': self.beta,
+            'current_gamma': self.gamma,
+            'avg_accuracy': np.mean(self.accuracy_history[-20:]) if self.accuracy_history else 0.0,
+            'avg_cost': np.mean(self.cost_history[-20:]) if self.cost_history else 0.0,
+            'avg_risk': np.mean(self.risk_history[-20:]) if self.risk_history else 0.0,
+        }
     
     @staticmethod
     def create_all() -> Dict[str, BaselinePolicy]:
@@ -369,4 +480,5 @@ class ComparableBaselines:
             'EWC': EWCPolicy(ewc_lambda=0.5),
             'ER': ExperienceReplayPolicy(replay_ratio=0.5),
             'SEALS': SEALSPolicy(alpha=1.0, beta=0.1, gamma=0.1),
+            'Auto-SEALS': AutoSEALSPolicy(),
         }
