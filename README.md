@@ -459,7 +459,7 @@ All plots are saved to `paper/figures/` after running experiments. Here's what e
 
 ### Phase 1: Stability-Plasticity Trade-Off
 
-**`fig_main_stability_plasticity.png` (Main Figure)**
+![fig_main_stability_plasticity.png](paper/figures/fig_main_stability_plasticity.png)
 - **What it shows:** Accuracy and SPI evolution across 200 steps for three retraining regimes
 - **Key patterns:**
   - Over-plastic (top left): Accuracy oscillates 0.3-0.5, sharp SPI dips to -1.5 (unstable)
@@ -468,14 +468,14 @@ All plots are saved to `paper/figures/` after running experiments. Here's what e
 - **Reading it:** Look for SPI near zero as sign of good balance; negative SPI indicates inefficiency
 - **Conclusion:** Visual proof of fundamental trade-off—cannot optimize both stability and plasticity
 
-**`exp_stability_plasticity_supplementary.png` (Supplementary Figure)**
+![exp_stability_plasticity_supplementary.png](paper/figures/exp_stability_plasticity_supplementary.png)
 - Detailed breakdown: Retrain decisions, drift signals, performance metrics by regime
 - Useful for: Understanding exactly when/why retraining triggered in each regime
 - Interpretation: Oscillations show high retrain cost; stagnation shows missed adaptation windows
 
 ### Phase 2: Feedback Regimes & Cost-Risk Analysis
 
-**`exp_feedback_regimes.png`**
+![exp_feedback_regimes.png](paper/figures/exp_feedback_regimes.png) 
 - **Three panels (one per feedback type):**
   - **Passive:** Accuracy declines to 25% by end; budget respects hard constraint
   - **Human-in-the-Loop:** Accuracy improves to 79% but budget explodes to -$4500 (10x over budget)
@@ -485,7 +485,7 @@ All plots are saved to `paper/figures/` after running experiments. Here's what e
 
 ### Phase 3: Real Datasets
 
-**`exp_real_datasets.png` (Two-panel figure)**
+![exp_real_datasets.png](paper/figures/exp_real_datasets.png)
 
 **Left Panel: CMAPSS (Predictive Maintenance)**
 - Shows accuracy and AUC across 12 evaluation windows
@@ -503,7 +503,7 @@ All plots are saved to `paper/figures/` after running experiments. Here's what e
 
 ### Phase 4: Meta-Learning (Auto-SEALS)
 
-**`phase4_auto_seals_weights.png` (Weight Evolution)**
+![phase4_auto_seals_weights.png](paper/figures/phase4_auto_seals_weights.png)
 - **Layout:** 3 subplots (Medical, Edge, Autonomous), each showing α, β, γ trajectories
 - **Medical domain (top):**
   - γ (risk) rises sharply from 0.1 → 0.67 by step 40, plateaus
@@ -520,7 +520,7 @@ All plots are saved to `paper/figures/` after running experiments. Here's what e
 - **Convergence pattern:** All domains stabilize by step 50 (warm-up complete), then oscillate within ±0.1 range
 - **Reading it:** Smooth curves = learning; sharp plateaus after step 50 = learned policy stability
 
-**`phase4_auto_seals_regret.png` (Cumulative Regret Comparison)**
+![phase4_auto_seals_regret.png](paper/figures/phase4_auto_seals_regret.png)
 - **Comparison:** Auto-SEALS (solid lines) vs Fixed SEALS (dashed lines) for each domain
 - **Medical domain:**
   - Auto-SEALS separates from Fixed-SEALS around step 50
@@ -581,15 +581,6 @@ All plots are saved to `paper/figures/` after running experiments. Here's what e
 
 ---
 
-## Citation
-
-```bibtex
-@article{seals2024,
-  title={SEALS: Self-Evolving AI Lifecycle Management Framework},
-  author={Your Name},
-  year={2024}
-}
-```
 
 ---
 
