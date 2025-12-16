@@ -457,6 +457,14 @@ class AutoSEALSPolicy(SEALSPolicy):
         self.beta = np.clip(self.beta * scale, 0.01, 5.0)
         self.gamma = np.clip(self.gamma * scale, 0.01, 5.0)
     
+    def get_weights(self) -> Dict:
+        """Get current policy weights."""
+        return {
+            'alpha': self.alpha,
+            'beta': self.beta,
+            'gamma': self.gamma
+        }
+    
     def get_learning_statistics(self) -> Dict:
         """Get learning progress statistics."""
         return {

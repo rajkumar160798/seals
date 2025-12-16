@@ -139,6 +139,14 @@ class MetaPolicyLearningExperiment:
             auto_accuracies.append(accuracy)
             auto_regrets.append(auto_regret_calc.cumulative_regret)
             
+            # Update Auto-SEALS weights based on feedback
+            auto_seals.update_weights_from_feedback(
+                accuracy=accuracy,
+                cost=auto_cost,
+                risk=risk,
+                cumulative_regret=auto_regret_calc.cumulative_regret
+            )
+            
             # Track learned weights
             weights = auto_seals.get_weights()
             auto_alpha_history.append(weights['alpha'])
