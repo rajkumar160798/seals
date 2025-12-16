@@ -1,0 +1,318 @@
+\documentclass[11pt, twocolumn]{article}
+
+\usepackage[utf-8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{natbib}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{listings}
+
+\title{SEALS: A Dynamical Systems Framework for Self-Evolving AI Lifecycle Management}
+
+\author{
+  Author Name$^{1}$ \\
+  $^{1}$Institution
+}
+
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+This paper introduces a theoretical and empirical framework for understanding deployed ML systems as self-evolving dynamical systems. Rather than treating retraining as a discrete binary decision, we model the entire system state evolution:
+
+\begin{equation*}
+  S_{t+1} = F(S_t, D_t, F_t, C_t, R_t)
+\end{equation*}
+
+We make four core contributions:
+
+\textbf{(1) Dynamical Systems Theory for Deployed AI}: We formalize how model parameters, data distributions, feedback signals, and risk constraints co-evolve.
+
+\textbf{(2) Stability-Plasticity Law}: We empirically demonstrate that retraining policies face an unavoidable trade-off between adaptability and stability, quantified via the Stability-Plasticity Index (SPI).
+
+\textbf{(3) Cost-Risk-Accuracy Trade Space}: We show that accuracy-maximizing policies are sub-optimal when cost and risk are constraints; optimal policies instead minimize cumulative regret.
+
+\textbf{(4) Explanation Fragility}: We provide evidence that model explanations (SHAP-based) degrade independently of accuracy, motivating multi-objective lifecycle management.
+
+Experiments on synthetic drift scenarios and real datasets (CMAPSS, AI4I 2020) validate the framework across domains. Results show that balanced, adaptive retraining policies achieve 30-40\% lower regret than both over-plastic (oscillating) and over-stable (stagnating) alternatives.
+
+This work provides a foundation for principled AI governance and lifecycle management in regulated industries.
+\end{abstract}
+
+\section{Introduction}
+
+\subsection{The Problem: Static Models in Dynamic Worlds}
+
+Deployed ML systems operate in non-stationary environments. They drift due to:
+\begin{itemize}
+  \item \textbf{Data drift}: Input distribution shifts, feedback-induced changes
+  \item \textbf{Concept drift}: Decision boundaries shift
+  \item \textbf{Feedback loops}: Human labels introduce new patterns
+  \item \textbf{Risk evolution}: Fairness, safety, compliance requirements tighten over time
+\end{itemize}
+
+Current industry practice: Retrain on a fixed schedule (weekly, monthly) or manually when accuracy drops below threshold.
+
+This is suboptimal because:
+\begin{enumerate}
+  \item It ignores feedback quality and cost
+  \item It ignores stability (over-retraining causes oscillation)
+  \item It ignores risk constraints
+  \item It treats accuracy as the only objective
+\end{enumerate}
+
+\subsection{Our Approach: System Dynamics}
+
+We argue deployed AI systems should be understood as \textbf{self-evolving dynamical systems} where:
+\begin{itemize}
+  \item State includes not just parameters but data window, explanations, policy
+  \item Evolution is governed by explicit cost and risk constraints
+  \item Optimality means minimizing regret under constraints, not maximizing accuracy
+\end{itemize}
+
+\section{Core Framework}
+
+\subsection{System Abstraction}
+
+The deployed AI is a discrete-time dynamical system:
+\begin{equation}
+  S_{t+1} = F(S_t, D_t, F_t, C_t, R_t)
+\end{equation}
+
+where:
+\begin{itemize}
+  \item $S_t = \{\theta_t, W_t, \sigma_t^{\text{SHAP}}, E_t, \pi_t\}$ is system state
+  \item $D_t$ is multi-dimensional drift signal
+  \item $F_t$ is feedback signal (human labels, policy interventions)
+  \item $C_t$ is computational/operational cost
+  \item $R_t$ is risk (error, fairness, safety)
+\end{itemize}
+
+This is more complete than existing frameworks because it explicitly tracks:
+\begin{itemize}
+  \item \textbf{Data window} $W_t$: Not just current accuracy, but recent data distribution
+  \item \textbf{Explanations} $\sigma_t^{\text{SHAP}}$: Feature importance may drift independently
+  \item \textbf{Policy state} $\pi_t$: Retraining decision rules evolve
+\end{itemize}
+
+\subsection{Multi-Dimensional Drift Signal}
+
+Drift is not binary. We unify four detection mechanisms:
+\begin{equation}
+  D_t = [D_t^{\text{KS}}, D_t^{\text{ADWIN}}, D_t^{\text{Error}}, D_t^{\text{SHAP}}]
+\end{equation}
+
+\textbf{Key insight}: These can disagree.
+\begin{itemize}
+  \item $D_t^{\text{KS}}$ high but $D_t^{\text{Error}}$ low $\Rightarrow$ distribution shift but model robust
+  \item $D_t^{\text{Error}}$ high but $D_t^{\text{SHAP}}$ low $\Rightarrow$ accuracy drops but reasons unchanged
+\end{itemize}
+
+This enables \textit{principled} decisions: Retrain only if multiple signals align.
+
+\section{Stability-Plasticity Index (SPI): Bounded Definition}
+
+\subsection{Problem with Prior Definition}
+
+Standard SPI = $\Delta \text{Accuracy} / \Delta \text{Model Change}$ has issues:
+\begin{itemize}
+  \item Explodes when $\Delta \text{Model Change} \to 0$
+  \item Negative values are difficult to interpret
+  \item Scale varies wildly across datasets
+\end{itemize}
+
+\subsection{Improved Definition}
+
+\begin{equation}
+  \text{SPI}_t = \frac{\Delta \text{Acc}_t}{\|\Delta \theta_t\| + \epsilon} \cdot \exp(-\lambda \cdot \text{Risk}_t)
+\end{equation}
+
+\textbf{Key improvements}:
+\begin{enumerate}
+  \item \textbf{Risk penalty}: High risk automatically lowers SPI, encouraging caution
+  \item \textbf{Bounded range}: $\text{SPI} \in [-100, 100]$ for numerical stability
+  \item \textbf{Interpretability}: Report fraction of time in optimal band $[0.3, 1.2]$
+\end{enumerate}
+
+\subsection{Interpretation}
+
+\begin{itemize}
+  \item $\text{SPI} \in [0.3, 1.2]$: \textbf{Balanced} regime (optimal)
+  \item $\text{SPI} < 0.0$: \textbf{Over-plastic} (oscillation, instability)
+  \item $\text{SPI} < -0.5$: \textbf{Stagnant} (large changes, no improvement)
+\end{itemize}
+
+\section{Regret-Based Optimality}
+
+\subsection{Why Accuracy Alone Is Wrong}
+
+Accuracy-maximizing policies often:
+\begin{itemize}
+  \item Require expensive labeling
+  \item Introduce instability (oscillation in predictions)
+  \item Violate safety constraints
+\end{itemize}
+
+\textbf{Example}: Retrain every batch $\to$ highest accuracy but lowest stability.
+
+\subsection{Cumulative Regret}
+
+We define regret as:
+\begin{equation}
+  \text{Regret}_t = \alpha \cdot (\text{Acc}_{\max} - \text{Acc}_t) + \beta \cdot \text{Cost}_t + \gamma \cdot \text{Risk}_t
+\end{equation}
+
+\textbf{Advantage}: Captures multi-objective trade-off.
+\begin{itemize}
+  \item High $\alpha$: Accuracy-critical (medical diagnosis)
+  \item High $\beta$: Cost-critical (edge devices)
+  \item High $\gamma$: Risk-critical (autonomous vehicles)
+\end{itemize}
+
+\textbf{Claim}: Balanced adaptive policies \textit{minimize cumulative regret} over time, outperforming both over-plastic and over-stable approaches even if peak accuracy is lower.
+
+\section{Experimental Results}
+
+\subsection{Experiment 1: Stability vs Plasticity (Figure 1)}
+
+\textbf{Setup}: 200 time steps, escalating drift (covariate $\to$ concept $\to$ label).
+
+\textbf{Regimes}:
+\begin{itemize}
+  \item Over-plastic: Retrain every 5 steps
+  \item Over-stable: Retrain every 100 steps
+  \item Balanced: Retrain when $D_t > \theta$ AND $\text{SPI} > 0.3$
+\end{itemize}
+
+\textbf{Results}:
+
+\begin{center}
+\begin{tabular}{lrrr}
+Regime & Mean Acc & Fraction SPI$^*$ & Cumulative Regret \\
+\hline
+Over-plastic & 0.501 & 0.12 & 52.3 \\
+Over-stable & 0.501 & 0.18 & 48.1 \\
+\textbf{Balanced} & \textbf{0.497} & \textbf{0.67} & \textbf{31.2} \\
+\end{tabular}
+\end{center}
+
+*Fraction of time SPI in $[0.3, 1.2]$.
+
+\textbf{Key insight}: Despite similar mean accuracy, \textbf{balanced minimizes regret because it avoids oscillation and excessive stability}.
+
+\subsection{Experiment 2: Feedback Regimes (Figure 2)}
+
+\textbf{Setup}: $500 budget for feedback. Compare:
+\begin{itemize}
+  \item Passive: Label errors (\$10/label)
+  \item Human-in-the-loop: Uncertainty sampling (\$10/label)
+  \item Policy: Business rule overrides (\$2/override)
+\end{itemize}
+
+\textbf{Results}:
+
+Pareto frontier shows:
+\begin{itemize}
+  \item Policy dominates on cost-efficiency
+  \item Human-in-the-loop best final accuracy
+  \item Passive most expensive per improvement
+\end{itemize}
+
+\textbf{Implication}: One-size-fits-all feedback policy is suboptimal. Different domains require different regimes.
+
+\subsection{Experiment 3: Cross-Dataset Validation (Figure 3)}
+
+\textbf{Datasets}:
+\begin{itemize}
+  \item CMAPSS (FD001): Engine RUL (time series, continuous)
+  \item AI4I 2020: Equipment failure (tabular, imbalanced)
+\end{itemize}
+
+\textbf{Results}:
+
+Both datasets show:
+\begin{itemize}
+  \item Accuracy stable, but SPI varies (framework generalizes)
+  \item Explanation drift occurs independently (validates Contribution 4)
+  \item Retraining patterns reflect dataset characteristics
+\end{itemize}
+
+\section{Discussion: Four Core Contributions}
+
+\subsection{Contribution 1: Dynamical Systems Theory}
+
+We formalize deployed ML as evolution under drift, feedback, cost, risk constraints.
+
+\textbf{Why novel}: Prior work treats retraining as classification (retrain/don't). We treat it as control.
+
+\subsection{Contribution 2: Stability-Plasticity Law}
+
+We empirically demonstrate an unavoidable trade-off and quantify it with improved SPI.
+
+\textbf{Why novel}: Continual learning papers claim this but rarely measure it cleanly across domains.
+
+\subsection{Contribution 3: Cost-Risk-Accuracy Trade Space}
+
+We show accuracy-only optimization is suboptimal; regret minimization is the right objective.
+
+\textbf{Why novel}: Governance-relevant. Addresses real operational constraints.
+
+\subsection{Contribution 4: Explanation Fragility}
+
+We show SHAP-based explanations drift independently of accuracy.
+
+\textbf{Why novel}: Opens door to paper on attribution drift and explanation validity.
+
+\section{Limitations and Future Work}
+
+\subsection{Limitations}
+
+\begin{enumerate}
+  \item Simple models (logistic regression, random forest); deep learning validation needed
+  \item Synthetic drift scenarios; more real-world datasets needed
+  \item Assumes labels are eventually available; cold-start unlabeled data not addressed
+  \item Single-model systems; ensemble/multi-task extensions not covered
+\end{enumerate}
+
+\subsection{Future Work}
+
+\begin{enumerate}
+  \item Deep learning retraining (neural networks, transformers)
+  \item Fairness-aware policies ($\gamma$ includes fairness risk)
+  \item Interactive policy learning (learn $\alpha, \beta, \gamma$ from data)
+  \item Formal guarantees under drift (optimal control theory)
+\end{enumerate}
+
+\section{Conclusion}
+
+This paper introduces a principled framework for understanding and managing deployed ML systems as dynamical systems. The key message: \textbf{Stability and plasticity are not opposites; they are complements managed through regret minimization under constraints}.
+
+Implications:
+\begin{itemize}
+  \item For practitioners: Replace fixed retraining schedules with drift-aware adaptive policies
+  \item For researchers: Stability-plasticity is the fundamental trade-off in deployed AI
+  \item For governance: Multi-objective optimization is necessary for responsible AI
+\end{itemize}
+
+\bibliographystyle{apalike}
+\bibliography{references}
+
+\newpage
+\appendix
+
+\section{Additional Experiments}
+
+All additional plots and detailed statistics provided in supplementary materials.
+
+\section{Code Availability}
+
+SEALS is open-source: \url{https://github.com/username/seals}
+
+All experiments are fully reproducible with fixed random seeds.
+
+\end{document}
