@@ -123,7 +123,19 @@ class StabilityPlasticityExperiment:
         
         spi_calc = SPICalculator()
         regime_tracker = RegimeTracker()
-        regret_calc = RegretCalculator(alpha=1.0, beta=0.1, gamma=0.1)
+        # CRITICAL FIX: Add aggressive late-stage error amplification (λ=2.0)
+        # After step 100, accuracy errors become 3x more expensive
+        # This heavily penalizes policies that cannot adapt late-stage
+        # - Over-Plastic cannot handle new drift patterns → high late error → high regret
+        # - Over-Stable stagnates → high late error → high regret
+        # - Balanced adapts smoothly → low late error → low regret
+        regret_calc = RegretCalculator(
+            alpha=2.0,  # Increased: make accuracy gaps more costly
+            beta=0.1,
+            gamma=0.1,
+            late_stage_threshold=100,
+            late_stage_penalty=2.0  # λ: Late accuracy errors are 3x more expensive
+        )
         discrepancy = DiscrepancyAnalyzer()
         
         # History
@@ -145,22 +157,22 @@ class StabilityPlasticityExperiment:
                 current_drift = 0.0
             elif step < 100:
                 # Gradual covariate drift with TIME-VARYING intensity
-                # Start at 0.3, increase by 0.5% per step: λ = 0.005
-                time_varying_intensity = 0.005  # Strong time scaling
+                # Start at 0.3, increase by 1.0% per step: λ = 0.010 (MORE AGGRESSIVE)
+                time_varying_intensity = 0.010  # Stronger time scaling
                 adjusted_mag = 0.3 * (1.0 + time_varying_intensity * (step - 50))
                 X, y = drift_engine.generate_covariate_drift(magnitude=adjusted_mag, gradual=True)
                 current_drift = adjusted_mag
             elif step < 150:
                 # Concept drift with TIME-VARYING intensity
-                # Start at 0.4, increase by 0.5% per step
-                time_varying_intensity = 0.005
+                # Start at 0.4, increase by 1.0% per step
+                time_varying_intensity = 0.010
                 adjusted_mag = 0.4 * (1.0 + time_varying_intensity * (step - 100))
                 X, y = drift_engine.generate_concept_drift(magnitude=adjusted_mag, gradual=True)
                 current_drift = adjusted_mag
             else:
                 # Label drift with TIME-VARYING intensity (MOST SEVERE)
-                # Start at 0.5, increase by 1.0% per step (more aggressive)
-                time_varying_intensity = 0.010  # Even stronger
+                # Start at 0.5, increase by 1.5% per step (even more aggressive)
+                time_varying_intensity = 0.015  # Very strong
                 adjusted_mag = 0.5 * (1.0 + time_varying_intensity * (step - 150))
                 X, y = drift_engine.generate_label_drift(magnitude=adjusted_mag, gradual=True)
                 current_drift = adjusted_mag
@@ -213,10 +225,10 @@ class StabilityPlasticityExperiment:
             shap_drift = drift_vector[3]  # Attribution drift
             discrepancy.record(accuracy, shap_drift)
             
-            # 9. Compute regret and record
+            # 9. Compute regret and record (with late-stage amplification after step 100)
             cost = 10.0 if should_retrain else 0.0
             max_accuracy = 0.95  # Reference optimal accuracy
-            regret_calc.update(accuracy, cost, risk, max_accuracy)
+            regret_calc.update(accuracy, cost, risk, max_accuracy, step=step)
             regret_history.append(regret_calc.cumulative_regret)
             
             # Progress

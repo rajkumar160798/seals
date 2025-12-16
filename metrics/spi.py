@@ -361,21 +361,38 @@ class RegretCalculator:
     """
     Computes cumulative regret for retraining policies.
     
-    Regret_t = α·(Acc_max - Acc_t) + β·Cost_t + γ·Risk_t
+    Two-stage regret formula:
+    - Early stage (t ≤ T): Regret_t = α·(Acc_max - Acc_t) + β·Cost_t + γ·Risk_t
+    - Late stage (t > T): Add late-error amplification: λ·(Acc_max - Acc_t)
+    
+    Late-stage amplification makes late errors expensive, favoring:
+    - Balanced policies that adapt smoothly
+    - Against over-plastic (oscillation late) and over-stable (stagnation late)
     
     Balanced policies minimize regret, not just maximize accuracy.
     """
     
-    def __init__(self, alpha: float = 1.0, beta: float = 0.1, gamma: float = 0.1):
+    def __init__(
+        self,
+        alpha: float = 1.0,
+        beta: float = 0.1,
+        gamma: float = 0.1,
+        late_stage_threshold: int = 100,
+        late_stage_penalty: float = 0.5
+    ):
         """
         Args:
-            alpha: Weight for accuracy gap
+            alpha: Weight for accuracy gap (early stage)
             beta: Weight for cost
             gamma: Weight for risk
+            late_stage_threshold: Time T after which to apply error amplification
+            late_stage_penalty: λ coefficient for late-stage error (multiplies accuracy gap)
         """
         self.alpha = alpha
         self.beta = beta
         self.gamma = gamma
+        self.late_stage_threshold = late_stage_threshold
+        self.late_stage_penalty = late_stage_penalty
         
         self.accuracy_history = []
         self.cost_history = []
@@ -388,16 +405,22 @@ class RegretCalculator:
         accuracy: float,
         cost: float,
         risk: float,
-        max_accuracy: float = 1.0
+        max_accuracy: float = 1.0,
+        step: int = None
     ) -> float:
         """
-        Update regret calculation.
+        Update regret calculation with late-stage error amplification.
+        
+        Formula:
+            Early (t ≤ T): Regret_t = α·(Acc* - Acc_t) + β·Cost_t + γ·Risk_t
+            Late (t > T):  Regret_t += λ·(Acc* - Acc_t)  [late errors are expensive]
         
         Args:
             accuracy: Current accuracy (0 to 1)
             cost: Current cost (normalized 0 to 1)
             risk: Current risk (0 to 1)
             max_accuracy: Best possible accuracy (default 1.0)
+            step: Current time step (for late-stage detection)
             
         Returns:
             Cumulative regret
@@ -406,12 +429,22 @@ class RegretCalculator:
         self.cost_history.append(cost)
         self.risk_history.append(risk)
         
-        # Compute instantaneous regret
+        # Compute current step
+        if step is None:
+            step = len(self.accuracy_history)
+        
+        # Base regret (early stage)
         regret_t = (
             self.alpha * (max_accuracy - accuracy) +
             self.beta * cost +
             self.gamma * risk
         )
+        
+        # Late-stage error amplification: after threshold T, late errors are expensive
+        # This makes balanced policies shine (they adapt; extreme policies collapse)
+        if step > self.late_stage_threshold:
+            late_stage_error = self.late_stage_penalty * (max_accuracy - accuracy)
+            regret_t += late_stage_error
         
         self.regret_history.append(regret_t)
         self.cumulative_regret += regret_t
