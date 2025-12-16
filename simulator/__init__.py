@@ -15,6 +15,23 @@ from .data_loader import (
     get_cmapss_data,
     get_ai4i_data
 )
+from .deep_model import DeepModel, ResNet18
+from .baseline_policies import (
+    BaselinePolicy,
+    FixedIntervalPolicy,
+    ADWINPolicy,
+    DDMPolicy,
+    EWCPolicy,
+    ExperienceReplayPolicy,
+    SEALSPolicy,
+    ComparableBaselines
+)
+from .benchmark_datasets import (
+    CIFAR10C,
+    RotatingMNIST,
+    ConceptDriftSequence,
+    BenchmarkDataLoader
+)
 
 __all__ = [
     "DriftEngine",
@@ -32,4 +49,17 @@ __all__ = [
     "AI4IDataLoader",
     "get_cmapss_data",
     "get_ai4i_data",
-]
+    "DeepModel",
+    "ResNet18",
+    "BaselinePolicy",
+    "FixedIntervalPolicy",
+    "ADWINPolicy",
+    "DDMPolicy",
+    "EWCPolicy",
+    "ExperienceReplayPolicy",
+    "SEALSPolicy",
+    "ComparableBaselines",
+    "CIFAR10C",
+    "RotatingMNIST",
+    "ConceptDriftSequence",
+    "BenchmarkDataLoader",]

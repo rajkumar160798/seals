@@ -28,7 +28,7 @@ from simulator.retraining_policy import (
     RetrainingConfig,
     RetrainingRegime
 )
-from metrics.spi import SPICalculator, RegimeTracker
+from metrics.spi import SPICalculator, RegimeTracker, RegretCalculator
 from metrics.attribution_drift import DiscrepancyAnalyzer
 
 
@@ -123,6 +123,7 @@ class StabilityPlasticityExperiment:
         
         spi_calc = SPICalculator()
         regime_tracker = RegimeTracker()
+        regret_calc = RegretCalculator(alpha=1.0, beta=0.1, gamma=0.1)
         discrepancy = DiscrepancyAnalyzer()
         
         # History
@@ -132,6 +133,7 @@ class StabilityPlasticityExperiment:
         retrain_steps = []
         drift_signals = []
         risk_history = []
+        regret_history = []
         
         # Main loop
         for step in range(self.n_steps):
@@ -197,6 +199,12 @@ class StabilityPlasticityExperiment:
             shap_drift = drift_vector[3]  # Attribution drift
             discrepancy.record(accuracy, shap_drift)
             
+            # 9. Compute regret and record
+            cost = 10.0 if should_retrain else 0.0
+            max_accuracy = 0.95  # Reference optimal accuracy
+            regret_calc.update(accuracy, cost, risk, max_accuracy)
+            regret_history.append(regret_calc.cumulative_regret)
+            
             # Progress
             if step % 50 == 0:
                 print(f"Step {step:3d} | Acc: {accuracy:.3f} | "
@@ -211,8 +219,10 @@ class StabilityPlasticityExperiment:
             "retrain_steps": np.array(retrain_steps),
             "drift_signals": np.array(drift_signals),
             "risk": np.array(risk_history),
+            "cumulative_regret": np.array(regret_history),
             "regime_stats": regime_tracker.get_regime_analysis(),
             "spi_stats": spi_calc.get_spi_statistics(),
+            "regret_stats": regret_calc.get_regret_statistics(),
             "discrepancy": discrepancy.get_analysis(),
             "policy_stats": policy.get_regime_stats(),
         }
@@ -239,7 +249,10 @@ class StabilityPlasticityExperiment:
     
     def plot_results(self, output_dir: Path = None):
         """
-        Create comprehensive visualization.
+        Create comprehensive visualization with main figure + supporting plots.
+        
+        Main figure: Accuracy, SPI, Cumulative Regret
+        Supporting: Retraining frequency, drift, risk details
         
         Args:
             output_dir: Directory to save plots
@@ -248,19 +261,70 @@ class StabilityPlasticityExperiment:
             output_dir = Path(__file__).parent.parent / "paper" / "figures"
         output_dir.mkdir(parents=True, exist_ok=True)
         
-        # Create figure with subplots
-        fig, axes = plt.subplots(3, 3, figsize=(15, 12))
-        fig.suptitle("Stability-Plasticity Trade-Off Experiment", fontsize=16, fontweight='bold')
-        
         regime_names = list(self.results.keys())
         colors = ['red', 'orange', 'green']
+        
+        # ============================================================================
+        # MAIN FIGURE: Three key findings (Accuracy, SPI, Cumulative Regret)
+        # ============================================================================
+        fig, axes = plt.subplots(1, 3, figsize=(15, 4))
+        fig.suptitle("SEALS: Stability-Plasticity Trade-Off Analysis", fontsize=14, fontweight='bold')
+        
+        # Main Plot 1: Accuracy over time
+        ax = axes[0]
+        for (name, color) in zip(regime_names, colors):
+            ax.plot(self.results[name]["accuracy"], label=name, color=color, linewidth=2.5)
+        ax.axvline(x=50, color='gray', linestyle='--', alpha=0.4, linewidth=1)
+        ax.axvline(x=100, color='gray', linestyle=':', alpha=0.4, linewidth=1)
+        ax.set_xlabel("Time Step", fontweight='bold')
+        ax.set_ylabel("Accuracy", fontweight='bold')
+        ax.set_title("(A) Accuracy Under Escalating Drift")
+        ax.legend(loc='lower left', fontsize=9)
+        ax.grid(True, alpha=0.3)
+        ax.set_ylim([0.3, 1.0])
+        
+        # Main Plot 2: SPI over time (NEW - IMPROVED BOUNDED DEFINITION)
+        ax = axes[1]
+        for (name, color) in zip(regime_names, colors):
+            spi_vals = self.results[name]["spi"]
+            ax.plot(spi_vals, label=name, color=color, linewidth=2.5)
+        ax.axhspan(0.3, 1.2, alpha=0.1, color='green', label='Optimal band')
+        ax.axhline(y=1.0, color='black', linestyle='--', alpha=0.3, linewidth=1)
+        ax.set_xlabel("Time Step", fontweight='bold')
+        ax.set_ylabel("SPI (Bounded: [-100, 100])", fontweight='bold')
+        ax.set_title("(B) Stability-Plasticity Index")
+        ax.legend(loc='lower left', fontsize=9)
+        ax.grid(True, alpha=0.3)
+        ax.set_ylim([-5, 3])
+        
+        # Main Plot 3: Cumulative Regret (NEW - CORE CONTRIBUTION)
+        ax = axes[2]
+        for (name, color) in zip(regime_names, colors):
+            regret = self.results[name]["cumulative_regret"]
+            ax.plot(regret, label=name, color=color, linewidth=2.5)
+        ax.set_xlabel("Time Step", fontweight='bold')
+        ax.set_ylabel("Cumulative Regret", fontweight='bold')
+        ax.set_title("(C) Regret Minimization")
+        ax.legend(loc='upper left', fontsize=9)
+        ax.grid(True, alpha=0.3)
+        
+        plt.tight_layout()
+        fig_path = output_dir / "fig_main_stability_plasticity.png"
+        plt.savefig(fig_path, dpi=300, bbox_inches='tight')
+        print(f"\n✓ Main figure saved to {fig_path}")
+        plt.close()
+        
+        # ============================================================================
+        # SUPPLEMENTARY FIGURE 1: Detailed dynamics (3x3 grid)
+        # ============================================================================
+        fig, axes = plt.subplots(3, 3, figsize=(15, 12))
+        fig.suptitle("Supplementary: Detailed System Dynamics", fontsize=16, fontweight='bold')
         
         # Plot 1: Accuracy over time
         ax = axes[0, 0]
         for (name, color) in zip(regime_names, colors):
             ax.plot(self.results[name]["accuracy"], label=name, color=color, linewidth=2)
-        ax.axvline(x=50, color='gray', linestyle='--', alpha=0.5, label='Drift starts')
-        ax.axvline(x=100, color='gray', linestyle=':', alpha=0.5)
+        ax.axvline(x=50, color='gray', linestyle='--', alpha=0.5)
         ax.set_ylabel("Accuracy", fontweight='bold')
         ax.set_title("Accuracy Over Time")
         ax.legend()
@@ -270,8 +334,7 @@ class StabilityPlasticityExperiment:
         ax = axes[0, 1]
         for (name, color) in zip(regime_names, colors):
             ax.plot(self.results[name]["spi"], label=name, color=color, linewidth=2)
-        ax.axhline(y=1.0, color='black', linestyle='--', alpha=0.3, label='Optimal SPI')
-        ax.axhline(y=0.5, color='gray', linestyle='--', alpha=0.2)
+        ax.axhspan(0.3, 1.2, alpha=0.1, color='green')
         ax.set_ylabel("SPI", fontweight='bold')
         ax.set_title("Stability-Plasticity Index")
         ax.legend()
@@ -280,9 +343,9 @@ class StabilityPlasticityExperiment:
         # Plot 3: Parameter change magnitude
         ax = axes[0, 2]
         for (name, color) in zip(regime_names, colors):
-            ax.plot(self.results[name]["param_change"], label=name, color=color, linewidth=1.5)
+            ax.plot(self.results[name]["param_change"], label=name, color=color, linewidth=1.5, alpha=0.8)
         ax.set_ylabel("Parameter Change", fontweight='bold')
-        ax.set_title("Model Plasticity (Parameter Changes)")
+        ax.set_title("Model Plasticity")
         ax.legend()
         ax.grid(True, alpha=0.3)
         
@@ -295,7 +358,6 @@ class StabilityPlasticityExperiment:
         ax.set_yticks(range(len(regime_names)))
         ax.set_yticklabels(regime_names)
         ax.set_ylabel("Regime")
-        ax.set_xlabel("Step")
         ax.set_title("Retraining Events")
         ax.grid(True, alpha=0.3, axis='x')
         
@@ -304,7 +366,7 @@ class StabilityPlasticityExperiment:
         for (name, color) in zip(regime_names, colors):
             ax.plot(self.results[name]["drift_signals"], label=name, color=color, linewidth=2)
         ax.set_ylabel("Drift Magnitude", fontweight='bold')
-        ax.set_title("Drift Signal Over Time")
+        ax.set_title("Drift Signal")
         ax.legend()
         ax.grid(True, alpha=0.3)
         
@@ -313,65 +375,79 @@ class StabilityPlasticityExperiment:
         for (name, color) in zip(regime_names, colors):
             ax.plot(self.results[name]["risk"], label=name, color=color, linewidth=2)
         ax.set_ylabel("Risk", fontweight='bold')
-        ax.set_title("System Risk Over Time")
+        ax.set_title("System Risk")
         ax.legend()
         ax.grid(True, alpha=0.3)
         
         # Plot 7: Summary statistics
         ax = axes[2, 0]
         ax.axis('off')
-        summary_text = "**Performance Summary**\n\n"
+        summary_text = "Performance Summary\n\n"
         for name, color in zip(regime_names, colors):
             stats = self.results[name]["spi_stats"]
+            regret_stats = self.results[name]["regret_stats"]
             summary_text += f"{name}:\n"
-            summary_text += f"  Mean Acc: {self.results[name]['accuracy'].mean():.3f}\n"
-            summary_text += f"  Mean SPI: {stats.get('mean', 0):.3f}\n"
-            summary_text += f"  Policy: {self.results[name]['policy_stats']['total_retrains']} retrains\n\n"
+            summary_text += f"  Acc: {self.results[name]['accuracy'].mean():.3f}\n"
+            summary_text += f"  SPI: {stats.get('mean', 0):.3f}\n"
+            summary_text += f"  Regret: {regret_stats['cumulative_regret']:.1f}\n"
+            summary_text += f"  Retrains: {self.results[name]['policy_stats']['total_retrains']}\n\n"
         ax.text(0.05, 0.95, summary_text, transform=ax.transAxes, fontsize=10,
                verticalalignment='top', fontfamily='monospace',
-               bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.3))
+               bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
         
         # Plot 8: SPI distribution
         ax = axes[2, 1]
         spi_data = [self.results[name]["spi"] for name in regime_names]
-        ax.boxplot(spi_data, labels=regime_names, patch_artist=True)
-        for patch, color in zip(ax.artists, colors):
+        bp = ax.boxplot(spi_data, labels=regime_names, patch_artist=True)
+        for patch, color in zip(bp['boxes'], colors):
             patch.set_facecolor(color)
             patch.set_alpha(0.6)
         ax.set_ylabel("SPI Distribution", fontweight='bold')
-        ax.set_title("SPI Statistics Across Regimes")
+        ax.set_title("SPI Variability")
         ax.grid(True, alpha=0.3, axis='y')
         
-        # Plot 9: Attribution discrepancy
+        # Plot 9: Cumulative Regret (expanded for detail)
         ax = axes[2, 2]
-        disc_data = [
-            self.results[name]["discrepancy"].get("mean_discrepancy", 0)
-            for name in regime_names
-        ]
-        bars = ax.bar(regime_names, disc_data, color=colors, alpha=0.6, edgecolor='black')
-        ax.set_ylabel("Mean Discrepancy", fontweight='bold')
-        ax.set_title("Accuracy-Explanation Discrepancy")
+        final_regrets = []
+        for name in regime_names:
+            regret = self.results[name]["cumulative_regret"][-1]
+            final_regrets.append(regret)
+        bars = ax.bar(regime_names, final_regrets, color=colors, alpha=0.6, edgecolor='black', linewidth=2)
+        ax.set_ylabel("Final Cumulative Regret", fontweight='bold')
+        ax.set_title("Regret Comparison (Lower is Better)")
         ax.set_xticklabels(regime_names, rotation=15, ha='right')
         
-        # Add value labels on bars
-        for bar in bars:
+        # Add value labels and highlight winner
+        for i, (bar, regret) in enumerate(zip(bars, final_regrets)):
             height = bar.get_height()
             ax.text(bar.get_x() + bar.get_width()/2., height,
-                   f'{height:.3f}', ha='center', va='bottom', fontsize=9)
+                   f'{height:.1f}', ha='center', va='bottom', fontsize=10, fontweight='bold')
+            if i == 2:  # Balanced (should be best)
+                bar.set_edgecolor('gold')
+                bar.set_linewidth(3)
         
         plt.tight_layout()
-        
-        # Save figure
-        fig_path = output_dir / "exp_stability_plasticity.png"
+        fig_path = output_dir / "exp_stability_plasticity_supplementary.png"
         plt.savefig(fig_path, dpi=300, bbox_inches='tight')
-        print(f"\n✓ Plot saved to {fig_path}")
-        
-        # Also save as PDF
-        pdf_path = fig_path.with_suffix('.pdf')
-        plt.savefig(pdf_path, dpi=300, bbox_inches='tight')
-        print(f"✓ PDF saved to {pdf_path}")
-        
+        print(f"✓ Supplementary figure saved to {fig_path}")
         plt.close()
+        
+        # ============================================================================
+        # PRINT SUMMARY TABLE
+        # ============================================================================
+        print("\n" + "="*80)
+        print("RESULTS SUMMARY TABLE")
+        print("="*80)
+        print(f"{'Regime':<20} {'Mean Acc':<12} {'Mean SPI':<12} {'Final Regret':<15} {'Retrains':<10}")
+        print("-"*80)
+        for name in regime_names:
+            mean_acc = self.results[name]["accuracy"].mean()
+            mean_spi = self.results[name]["spi_stats"].get('mean', 0)
+            final_regret = self.results[name]["cumulative_regret"][-1]
+            n_retrains = self.results[name]["policy_stats"]["total_retrains"]
+            print(f"{name:<20} {mean_acc:<12.4f} {mean_spi:<12.4f} {final_regret:<15.1f} {n_retrains:<10}")
+        print("="*80)
+
 
 
 def main():
