@@ -33,6 +33,7 @@ class DriftConfig:
     onset_time: int  # When drift starts (step number)
     duration: int  # Duration of drift (steps)
     gradual: bool = True  # Whether drift is gradual or abrupt
+    time_varying_intensity: float = 0.0  # λ for time-varying drift: Drift_t = Drift_0 * (1 + λ*t)
     seed: int = 42
 
 
@@ -231,6 +232,7 @@ class DriftEngine:
         # State
         self.current_step = 0
         self.base_distribution_params = self._init_base_distribution()
+        self.drift_config = None  # Will store DriftConfig when active
         
     def _init_base_distribution(self) -> Dict:
         """Initialize base data distribution parameters."""
@@ -240,6 +242,26 @@ class DriftEngine:
             "label_bias": 0.5,
         }
         
+    def _compute_time_varying_magnitude(self, base_magnitude: float, time_varying_intensity: float = 0.0) -> float:
+        """
+        Compute magnitude with time-varying intensity.
+        
+        Formula: Drift_t = Drift_0 * (1 + λ*t)
+        
+        Args:
+            base_magnitude: Base drift magnitude (Drift_0)
+            time_varying_intensity: λ coefficient for linear time scaling
+            
+        Returns:
+            Adjusted magnitude accounting for time
+        """
+        if time_varying_intensity <= 0:
+            return base_magnitude
+        
+        # Drift_t = Drift_0 * (1 + λ*t)
+        adjusted = base_magnitude * (1.0 + time_varying_intensity * self.current_step)
+        return np.clip(adjusted, 0.0, 1.0)  # Keep bounded
+    
     def generate_covariate_drift(
         self,
         magnitude: float = 0.5,

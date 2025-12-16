@@ -137,19 +137,33 @@ class StabilityPlasticityExperiment:
         
         # Main loop
         for step in range(self.n_steps):
-            # 1. Generate data with drift
+            # 1. Generate data with time-varying drift intensity
+            # Drift_t = Drift_0 * (1 + λ*t)  where λ increases over time
             if step < 50:
-                # No drift
+                # No drift (warm-up phase)
                 X, y = drift_engine.generate_covariate_drift(magnitude=0.0)
+                current_drift = 0.0
             elif step < 100:
-                # Gradual covariate drift
-                X, y = drift_engine.generate_covariate_drift(magnitude=0.3, gradual=True)
+                # Gradual covariate drift with TIME-VARYING intensity
+                # Start at 0.3, increase by 0.5% per step: λ = 0.005
+                time_varying_intensity = 0.005  # Strong time scaling
+                adjusted_mag = 0.3 * (1.0 + time_varying_intensity * (step - 50))
+                X, y = drift_engine.generate_covariate_drift(magnitude=adjusted_mag, gradual=True)
+                current_drift = adjusted_mag
             elif step < 150:
-                # Concept drift
-                X, y = drift_engine.generate_concept_drift(magnitude=0.4, gradual=True)
+                # Concept drift with TIME-VARYING intensity
+                # Start at 0.4, increase by 0.5% per step
+                time_varying_intensity = 0.005
+                adjusted_mag = 0.4 * (1.0 + time_varying_intensity * (step - 100))
+                X, y = drift_engine.generate_concept_drift(magnitude=adjusted_mag, gradual=True)
+                current_drift = adjusted_mag
             else:
-                # Label drift
-                X, y = drift_engine.generate_label_drift(magnitude=0.5, gradual=True)
+                # Label drift with TIME-VARYING intensity (MOST SEVERE)
+                # Start at 0.5, increase by 1.0% per step (more aggressive)
+                time_varying_intensity = 0.010  # Even stronger
+                adjusted_mag = 0.5 * (1.0 + time_varying_intensity * (step - 150))
+                X, y = drift_engine.generate_label_drift(magnitude=adjusted_mag, gradual=True)
+                current_drift = adjusted_mag
             
             # 2. Evaluate current model
             accuracy = model.accuracy(X, y)

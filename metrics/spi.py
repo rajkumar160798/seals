@@ -1,12 +1,21 @@
 """
 Stability-Plasticity Index (SPI) Metric
 
-Quantifies the trade-off between stability and plasticity:
+Quantifies the trade-off between stability and plasticity.
 
-    SPI = ΔAccuracy / (‖ΔModel‖ + ε)
+TWO METRICS:
 
-High SPI (> 1): Efficient learning (accuracy gains with modest changes)
-Low SPI (< 0.1): Inefficient learning (changes without improvement)
+1. Raw SPI (legacy, clipped to ±100):
+   SPI = ΔAccuracy / (‖ΔModel‖ + ε) * exp(-λ * Risk)
+
+2. NORMALIZED SPI (nSPI - preferred, bounded in [-1, 1]):
+   nSPI = tanh(ΔAccuracy / (‖ΔModel‖ + ε))
+   
+   Properties:
+   - Bounded in [-1, 1], no arbitrary clipping
+   - Comparable across datasets
+   - Smooth saturation instead of hard bounds
+   - Better interpretability for control theory
 """
 
 import numpy as np
@@ -118,6 +127,36 @@ class SPICalculator:
         self.spi_history.append(spi)
         return spi
     
+    def compute_normalized_spi(self) -> float:
+        """
+        Compute Normalized SPI (nSPI) - bounded version using tanh.
+        
+        nSPI_t = tanh(ΔAccuracy_t / (‖ΔModel‖_t + ε))
+        
+        Properties:
+        - Bounded in [-1, 1]
+        - No arbitrary clipping, smooth saturation
+        - Comparable across datasets
+        - Better for control theory interpretation
+        
+        Returns:
+            nSPI value in [-1, 1]
+        """
+        if len(self.accuracy_history) < 2:
+            nspi = 0.0
+        else:
+            window_start = max(0, len(self.accuracy_history) - self.window_size)
+            delta_accuracy = (
+                self.accuracy_history[-1] - self.accuracy_history[window_start]
+            )
+            total_change = sum(self.parameter_norms[window_start:])
+            
+            # Normalized SPI using tanh (bounded, smooth)
+            raw_ratio = delta_accuracy / (total_change + self.epsilon)
+            nspi = np.tanh(raw_ratio)
+        
+        return nspi
+    
     def get_regime(self, spi: float) -> str:
         """
         Classify SPI into regime.
@@ -157,6 +196,49 @@ class SPICalculator:
     def get_current_spi(self) -> float:
         """Get most recent SPI value."""
         return self.spi_history[-1] if self.spi_history else 0.0
+    
+    def get_nspi_statistics(self) -> Dict[str, float]:
+        """
+        Compute comprehensive nSPI statistics.
+        
+        Returns:
+            Dict with:
+            - mean_nspi: Mean nSPI
+            - std_nspi: Standard deviation
+            - max_nspi: Maximum value
+            - min_nspi: Minimum value
+            - fraction_optimal: Fraction in [-0.7, 1.0] band
+        """
+        if len(self.accuracy_history) < 2:
+            return {
+                'mean_nspi': 0.0,
+                'std_nspi': 0.0,
+                'max_nspi': 0.0,
+                'min_nspi': 0.0,
+                'fraction_optimal': 0.0,
+            }
+        
+        # Compute nSPI history
+        nspi_values = []
+        for t in range(1, len(self.accuracy_history)):
+            # Recompute for each time point
+            delta_accuracy = self.accuracy_history[t] - self.accuracy_history[0]
+            total_change = sum(self.parameter_norms[:t])
+            raw_ratio = delta_accuracy / (total_change + self.epsilon)
+            nspi_values.append(np.tanh(raw_ratio))
+        
+        nspi_array = np.array(nspi_values)
+        
+        # Count optimal band [-0.7, 1.0]
+        in_optimal = np.sum((nspi_array >= -0.7) & (nspi_array <= 1.0))
+        
+        return {
+            'mean_nspi': float(np.mean(nspi_array)),
+            'std_nspi': float(np.std(nspi_array)),
+            'max_nspi': float(np.max(nspi_array)),
+            'min_nspi': float(np.min(nspi_array)),
+            'fraction_optimal': float(in_optimal / len(nspi_array)),
+        }
     
     def get_spi_trend(self, window: int = 10) -> float:
         """

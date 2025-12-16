@@ -404,12 +404,24 @@ class AutoSEALSPolicy(SEALSPolicy):
         cumulative_regret: float
     ):
         """
-        Update α, β, γ based on observed metrics.
+        Update α, β, γ using online regret-aware objective reweighting.
+        
+        Formal update rule:
+            w_{t+1} = softmax(w_t - η * ∇_w Regret_t)
+        
+        where:
+        - w = [α, β, γ]
+        - Regret_t = α * (Acc* - Acc_t) + β * Cost_t + γ * Risk_t
+        - ∇_w Regret_t is the gradient with respect to [α, β, γ]
+        
+        This is online regret-aware objective reweighting:
+        - Increase weight on objectives where regret is high
+        - Decrease weight on objectives where regret is low
         
         Args:
-            accuracy: Current model accuracy
-            cost: Cost of last decision
-            risk: Risk of last decision
+            accuracy: Current model accuracy (target ~0.95)
+            cost: Cost of last decision (target ~5-10)
+            risk: Risk of last decision (target ~0.1)
             cumulative_regret: Total regret so far
         """
         self.accuracy_history.append(accuracy)
@@ -421,41 +433,46 @@ class AutoSEALSPolicy(SEALSPolicy):
         if len(self.accuracy_history) < self.warmup_steps:
             return
         
-        # Analyze recent performance
-        window = min(20, len(self.accuracy_history))
-        recent_acc = np.mean(self.accuracy_history[-window:])
-        recent_cost = np.mean(self.cost_history[-window:])
-        recent_risk = np.mean(self.risk_history[-window:])
-        
-        # Compute "pain points" - areas where performance is weak
-        target_acc = 0.95
+        # **Gradient computation** ∇_w Regret_t
+        # Define regret components:
+        target_accuracy = 0.95
         target_cost = 10.0
         target_risk = 0.1
         
-        pain_acc = max(0, target_acc - recent_acc)
-        pain_cost = max(0, recent_cost - 5.0) / max(target_cost, 1.0)
-        pain_risk = max(0, recent_risk - target_risk) / max(target_risk, 1.0)
+        # Partial derivatives:
+        # ∂Regret/∂α = (Acc* - Acc_t)  [positive when accuracy is low]
+        # ∂Regret/∂β = Cost_t           [positive when cost is high]
+        # ∂Regret/∂γ = Risk_t           [positive when risk is high]
         
-        # Normalize pains
-        total_pain = pain_acc + pain_cost + pain_risk + 1e-6
+        grad_alpha = (target_accuracy - accuracy)  # Higher when accuracy poor
+        grad_beta = (cost - 5.0) / max(target_cost, 1.0)  # Higher when cost high
+        grad_gamma = (risk - target_risk) / max(target_risk, 1.0)  # Higher when risk high
         
-        # Adjust weights: increase weight on painful dimensions
-        delta_alpha = (pain_acc / total_pain) * self.learning_rate
-        delta_beta = (pain_cost / total_pain) * self.learning_rate
-        delta_gamma = (pain_risk / total_pain) * self.learning_rate
+        # Gradient vector
+        grad = np.array([grad_alpha, grad_beta, grad_gamma])
         
-        self.alpha += delta_alpha
-        self.beta += delta_beta
-        self.gamma += delta_gamma
+        # **Update rule**: w_{t+1} = softmax(w_t - η * ∇_w Regret_t)
+        # This implements gradient descent on the negative regret space,
+        # then normalizes to probability distribution via softmax
         
-        # Keep weights normalized and bounded
-        current_sum = self.alpha + self.beta + self.gamma
-        target_sum = 1.2
-        scale = target_sum / current_sum
+        current_w = np.array([self.alpha, self.beta, self.gamma])
         
-        self.alpha = np.clip(self.alpha * scale, 0.01, 5.0)
-        self.beta = np.clip(self.beta * scale, 0.01, 5.0)
-        self.gamma = np.clip(self.gamma * scale, 0.01, 5.0)
+        # Gradient step
+        updated_w = current_w - self.learning_rate * grad
+        
+        # Apply softmax to convert to probability distribution
+        # softmax ensures weights sum to 1 and are bounded [0, 1]
+        exp_w = np.exp(updated_w - np.max(updated_w))  # numerical stability
+        softmax_w = exp_w / np.sum(exp_w)
+        
+        # Scale back to original magnitude (weights need not sum to 1)
+        original_sum = np.sum(current_w)
+        scaled_w = softmax_w * original_sum
+        
+        # Update with bounds
+        self.alpha = np.clip(scaled_w[0], 0.01, 5.0)
+        self.beta = np.clip(scaled_w[1], 0.01, 5.0)
+        self.gamma = np.clip(scaled_w[2], 0.01, 5.0)
     
     def get_weights(self) -> Dict:
         """Get current policy weights."""

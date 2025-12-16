@@ -1,0 +1,75 @@
+/Users/rajkumarmyakala/seals/experiments/exp_stability_plasticity.py:415: MatplotlibDeprecationWarning: The 'labels' parameter of boxplot() has been renamed 'tick_labels' since Matplotlib 3.9; support for the old name will be dropped in 3.11.
+  bp = ax.boxplot(spi_data, labels=regime_names, patch_artist=True)
+/Users/rajkumarmyakala/seals/experiments/exp_stability_plasticity.py:432: UserWarning: set_ticklabels() should only be used with a fixed number of ticks, i.e. after set_ticks() or using a FixedLocator.
+  ax.set_xticklabels(regime_names, rotation=15, ha='right')
+
+================================================================================
+SEALS Experiment 1: Stability vs Plasticity Trade-Off
+================================================================================
+
+============================================================
+Running regime: Over-Plastic (Oscillating)
+============================================================
+Step   0 | Acc: 0.370 | SPI:  0.00 | Drift: 0.000 | Retrain: YES
+Step  50 | Acc: 0.440 | SPI: -0.49 | Drift: 0.159 | Retrain: YES
+Step 100 | Acc: 0.430 | SPI: -2.50 | Drift: 0.062 | Retrain: YES
+Step 150 | Acc: 0.560 | SPI: 100.00 | Drift: 0.057 | Retrain: NO 
+
+============================================================
+Running regime: Over-Stable (Stagnant)
+============================================================
+Step   0 | Acc: 0.690 | SPI:  0.00 | Drift: 0.000 | Retrain: NO 
+Step  50 | Acc: 0.320 | SPI: -2.95 | Drift: 0.126 | Retrain: YES
+Step 100 | Acc: 0.330 | SPI: -0.70 | Drift: 0.061 | Retrain: YES
+Step 150 | Acc: 0.700 | SPI:  4.63 | Drift: 0.052 | Retrain: NO 
+
+============================================================
+Running regime: Balanced (Optimal)
+============================================================
+Step   0 | Acc: 0.520 | SPI:  0.00 | Drift: 0.000 | Retrain: NO 
+Step  50 | Acc: 0.470 | SPI:  0.97 | Drift: 0.048 | Retrain: YES
+Step 100 | Acc: 0.360 | SPI: -3.09 | Drift: 0.048 | Retrain: YES
+Step 150 | Acc: 0.700 | SPI: 100.00 | Drift: 0.066 | Retrain: NO 
+
+✓ Main figure saved to /Users/rajkumarmyakala/seals/paper/figures/fig_main_stability_plasticity.png
+✓ Supplementary figure saved to /Users/rajkumarmyakala/seals/paper/figures/exp_stability_plasticity_supplementary.png
+
+================================================================================
+RESULTS SUMMARY TABLE
+================================================================================
+Regime               Mean Acc     Mean SPI     Final Regret    Retrains  
+--------------------------------------------------------------------------------
+Over-Plastic (Oscillating) 0.5051       0.1645       199.6           100       
+Over-Stable (Stagnant) 0.4838       -1.7195      204.4           100       
+Balanced (Optimal)   0.4956       -1.0854      201.7           100       
+================================================================================
+
+================================================================================
+SUMMARY
+================================================================================
+
+Over-Plastic (Oscillating):
+  Mean Accuracy: 0.5051
+  Std Accuracy: 0.0863
+  Mean SPI: 0.1645
+  Total Retrains: 100
+  Avg Retrain Interval: 1.4
+  Discrepancy Score: 0.0537
+
+Over-Stable (Stagnant):
+  Mean Accuracy: 0.4838
+  Std Accuracy: 0.1060
+  Mean SPI: -1.7195
+  Total Retrains: 100
+  Avg Retrain Interval: 1.5
+  Discrepancy Score: 0.0618
+
+Balanced (Optimal):
+  Mean Accuracy: 0.4956
+  Std Accuracy: 0.0921
+  Mean SPI: -1.0854
+  Total Retrains: 100
+  Avg Retrain Interval: 1.5
+  Discrepancy Score: 0.0288
+
+================================================================================
