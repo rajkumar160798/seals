@@ -42,18 +42,16 @@ venv.bak/
 .ipynb_checkpoints/
 *.ipynb
 
-# Matplotlib
-*.png
-*.pdf
-
-# Results
-results/
-plots/
-outputs/
-logs/
-
-# Data
+# Data (large files and downloads)
 data/raw/
+data/cifar-10-batches-py/
+data/*.tar.gz
+data/*.zip
+data/*/*.tar.gz
+data/*/*.zip
+CMAPSSData/
+*.pkl
+*.h5
 data/processed/
 *.csv
 *.xlsx
