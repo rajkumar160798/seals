@@ -17,9 +17,49 @@
 
 \title{Self-Evolving AI Systems: Stability--Plasticity Trade-Offs and Regret-Aware Learning in Deployed Machine Learning}
 
-\author{\IEEEauthorblockN{Author Name}
-\IEEEauthorblockA{Institution/Affiliation\\
-Email: author@institution.edu}}
+
+\author{\IEEEauthorblockN{ Raj Kumar Myakala}
+\IEEEauthorblockA{
+\textit{CVS Health} \\
+Washington D.C., USA \\
+ORCID: {0009-0003-0798-708X}
+}
+\and
+\IEEEauthorblockN{ Vinithya Reddy Podduturi}
+\IEEEauthorblockA{
+\textit{World Bank} \\
+Washington D.C., USA \\
+ORCID: {0009-0003-1450-4509}
+}
+\and
+\IEEEauthorblockN{Omkar Yadav Bojja}
+\IEEEauthorblockA{
+\textit{University of North Texas} \\
+Texas, USA \\
+ORCID: {0009-0002-7551-5474}
+}
+\and
+\IEEEauthorblockN{Akansha Bojja}
+\IEEEauthorblockA{
+\textit{University of North Texas} \\
+Texas, USA \\
+ORCID: {0009-0006-2315-7117}
+}
+\and
+\IEEEauthorblockN{Akhil Reddy Jagirapu}
+\IEEEauthorblockA{
+\textit{University of North Texas} \\
+Texas, USA \\
+ORCID: {0009-0008-1793-6872}
+}
+\and
+\IEEEauthorblockN{Praveen Kumar Nagata}
+\IEEEauthorblockA{
+\textit{Trine University} \\
+Indiana, USA \\
+ORCID: {0009-0008-6550-760X}
+}
+}
 
 \maketitle
 
@@ -127,8 +167,10 @@ Feedback costs vary: Passive (\$500, labels naturally available), Policy-Driven 
 Retraining operates in three modes, summarized in Table~\ref{tab:modes}:
 
 \begin{table}[h]
+\caption{Retraining modes: Over-plastic overadapts; Balanced optimizes; Over-stable underadapts.}
 \centering
 \small
+\resizebox{\columnwidth}{!}{
 \begin{tabular}{lccc}
 \hline
 Mode & Trigger Frequency & nSPI & Outcome \\
@@ -138,8 +180,8 @@ Balanced & When drift threshold exceeded & $[0.3, 0.8]$ & Optimal regret \\
 Over-stable & Monthly or manual & $> 0.8$ & Staleness, drift miss \\
 \hline
 \end{tabular}
-\caption{Retraining modes: Over-plastic overadapts; Balanced optimizes; Over-stable underadapts.}
 \label{tab:modes}
+}
 \end{table}
 
 \section{Stability--Plasticity Index (SPI)}
@@ -278,6 +320,7 @@ Accuracy, nSPI, cumulative regret, number of retrains, catastrophic forgetting r
 \subsection{Phase 1: Stability--Plasticity Trade-Off}
 
 \begin{table}[h]
+\caption{Balanced achieves lowest regret despite lower accuracy. SPI in optimal band.}
 \centering
 \small
 \begin{tabular}{lcccc}
@@ -289,7 +332,6 @@ Over-stable & 50.1\% & 0.18 & 383.5 & 0.31 \\
 \textbf{Balanced} & 49.7\% & \textbf{0.67} & \textbf{376.6} & \textbf{0.08} \\
 \hline
 \end{tabular}
-\caption{Balanced achieves lowest regret despite lower accuracy. SPI in optimal band.}
 \end{table}
 
 \textbf{Key insight:} Accuracy-only comparison is misleading. Balanced uses 2.5$\times$ fewer retrains than Over-plastic, prevents forgetting 3.9$\times$ better.
@@ -356,11 +398,14 @@ CMAPSS: 72.4\% vs baseline 68\% (+4.4\%). AI4I: 98.25\% ROC-AUC vs 94\% (+4.25\%
 
 Weights converge to $\alpha \approx 0.40, \beta \approx 0.40, \gamma \approx 0.40$ across all domains (Medical, Edge, Autonomous) after 150 iterations. Slight domain variations reflect priorities: Medical emphasizes accuracy, Edge emphasizes cost.
 
+
+
 \begin{table}[h]
 \centering
 \caption{Auto-SEALS Domain-Specific Weight Discovery. Learned weights align with real-world priorities: Healthcare maximizes accuracy ($\alpha=0.50$), Manufacturing minimizes cost ($\beta=0.50$), Autonomous prioritizes safety ($\gamma=0.40$). Each weight configuration forms a governance-aligned policy.}
 \label{tab:autoseals_weights}
 \small
+\resizebox{\columnwidth}{!}{
 \begin{tabular}{lcccccc}
 \hline
 Domain & $\alpha$ & $\beta$ & $\gamma$ & Accuracy & Regret & Cost (\$) \\
@@ -374,7 +419,8 @@ Healthcare & \checkmark & (High) & (Medium) & Safety-first & -- & -- \\
 Manufacturing & (Medium) & \checkmark & (Medium) & Cost-optimized & -- & -- \\
 Vehicles & (Medium) & (Medium) & \checkmark & Risk-aware & -- & -- \\
 \hline
-\end{tabular}
+\end{tabular}%
+}
 \end{table}
 
 \textbf{Governance Implications:} Unlike black-box meta-learning, Auto-SEALS weights are:
